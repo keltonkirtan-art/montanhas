@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Destinos de Montanha (Insights Gemini)</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #FDFBF8; color: #4A4A4A; }
+    .active-tab { background-color: #8D7B68; color: #FFFFFF; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+    .inactive-tab { background-color: #EFEBE5; color: #8D7B68; }
+    .chart-container { position: relative; width: 100%; max-width: 1000px; margin: auto; height: 400px; }
+    .modal { background-color: rgba(0, 0, 0, 0.6); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); z-index: 50; }
+    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #8D7B68; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* Scrollbar elegante */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #8D7B68; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #65584A; }
+
+    /* Estilos manuais para o texto gerado (já que removemos o plugin typography) */
+    .roteiro-content h3 { font-size: 1.25rem; font-weight: 700; color: #65584A; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .roteiro-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+    .roteiro-content li { margin-bottom: 0.25rem; }
+    .roteiro-content p { margin-bottom: 1rem; line-height: 1.6; }
+    .roteiro-content strong { color: #8D7B68; }
+  </style>
+</head>
+<body class="antialiased">
+
+  <div id="app" class="container mx-auto p-4 md:p-8 max-w-[1600px]">
+    <header class="text-center mb-10">
+      <h1 class="text-4xl md:text-5xl font-bold text-[#65584A]">Destinos de Montanha em Alta</h1>
+      <p class="text-lg text-gray-600 mt-3">Explore os locais mais procurados no Brasil em 2024</p>
+    </header>
+
+    <nav class="flex justify-center items-center space-x-6 mb-10">
+      <button id="comfort-btn" class="px-8 py-3 font-semibold rounded-full shadow-md transition-all inactive-tab transform hover:scale-105">🧘 Conforto</button>
+      <button id="adventure-btn" class="px-8 py-3 font-semibold rounded-full shadow-md transition-all inactive-tab transform hover:scale-105">🧗 Aventura</button>
+    </nav>
+
+    <main id="content-area" class="space-y-12">
+      <section id="chart-section" class="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+        <h2 id="chart-title" class="text-2xl font-bold text-center mb-6 text-[#65584A]"></h2>
+        <div class="chart-container">
+          <canvas id="destinations-chart"></canvas>
+        </div>
+      </section>
+
+      <section id="destinations-section">
+        <h2 id="destinations-title" class="text-3xl font-bold mb-8 text-[#65584A] px-2"></h2>
+        <div id="destinations-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8"></div>
+      </section>
+    </main>
+    
+    <footer class="text-center mt-16 pt-8 border-t border-gray-200">
+      <p class="text-gray-500">Desenvolvido com dados de turismo e Insights da API Gemini.</p>
+    </footer>
+  </div>
+
+  <div id="insights-modal" class="modal fixed inset-0 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl relative flex flex-col max-h-[90vh] overflow-hidden">
+      
+      <div class="p-6 border-b border-gray-200 bg-gray-50 z-10 w-full shrink-0">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors p-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        
+        <h3 id="modal-title" class="text-2xl font-bold text-[#65584A] pr-10 mb-4">Insights para...</h3>
+        
+        <div class="space-y-4">
+          <div>
+            <label for="theme-selector" class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Escolha o Foco do Roteiro:</label>
+            <select id="theme-selector" class="w-full pl-4 pr-10 py-3 text-sm bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8D7B68] focus:border-transparent rounded-lg shadow-sm">
+              <option value="geral">🗓️ Roteiro de 3 Dias (Geral)</option>
+              <option value="gastronomia">🍷 Gastronomia e Vinhos</option>
+              <option value="historia">🏛️ História e Cultura</option>
+              <option value="natureza">🌿 Trilhas e Natureza</option>
+              <option value="familia">👨‍👩‍👧‍👦 Dicas para Família</option>
+            </select>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button onclick="activateApiAndGenerateInsight(currentDestinationName, document.getElementById('theme-selector').value)" class="w-full bg-[#8D7B68] hover:bg-[#6f5e4d] text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
+               ✨ Gerar Roteiro
+            </button>
+            
+            <button id="btn-download" onclick="downloadInsight()" class="hidden w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
+               📥 Baixar (.txt)
+            </button>
+            <button id="btn-open" onclick="openInNewTab()" class="hidden w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
+               🗺️ Abrir Janela
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="scroll-container" class="flex-1 w-full overflow-y-auto bg-white p-6 md:p-8 relative">
+        
+        <div id="modal-loader" class="hidden absolute inset-0 bg-white z-20 flex flex-col justify-center items-center h-full">
+          <div class="loader mb-4 border-t-[#8D7B68]"></div>
+          <p class="text-[#8D7B68] font-medium animate-pulse text-lg">Criando roteiro exclusivo...</p>
+        </div>
+
+        <div id="success-banner" class="hidden mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm flex items-center justify-center gap-2 font-medium shadow-sm">
+          <span>✅</span> Roteiro gerado! Você pode ler abaixo, baixar ou abrir em outra aba.
+        </div>
+
+        <div id="modal-content" class="roteiro-content text-gray-800 text-base leading-relaxed break-words">
+          <div class="flex flex-col items-center justify-center h-40 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
+            <p class="text-lg text-center">👆 Escolha um tema e clique em <span class="font-bold text-[#8D7B68]">Gerar Roteiro</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Configurações ---
+
+    // --- Dados ---
+    const data = {
+      comfort: {
+        title: 'Destinos para quem busca Conforto',
+        chartTitle: 'Índice de Popularidade: Conforto',
+        labels: ['Campos do Jordão (SP)', 'Gramado (RS)', 'Petrópolis (RJ)', 'Monte Verde (MG)', 'Visconde de Mauá (RJ)'],
+        popularity: [95, 92, 88, 85, 80],
+        backgroundColor: 'rgba(141, 123, 104, 0.7)',
+        borderColor: 'rgba(141, 123, 104, 1)',
+        destinations: [
+          { name: 'Campos do Jordão, SP', description: 'A "Suíça Brasileira", oferece arquitetura europeia e gastronomia refinada.', attractions: 'Vila Capivari, Amantikir, Teleférico.' },
+          { name: 'Gramado e Canela, RS', description: 'Referência em hotelaria e charme serrano no Sul do Brasil.', attractions: 'Rua Coberta, Lago Negro, Cascata do Caracol.' },
+          { name: 'Petrópolis, RJ', description: 'Cidade Imperial com clima ameno e muita história preservada.', attractions: 'Museu Imperial, Palácio de Cristal.' },
+          { name: 'Monte Verde, MG', description: 'Vilarejo romântico no topo da Serra da Mantiqueira.', attractions: 'Pedra Redonda, Chocolaterias, Patinação no Gelo.' },
+          { name: 'Visconde de Mauá, RJ', description: 'Refúgio de tranquilidade com rios cristalinos e ótimas pousadas.', attractions: 'Cachoeira do Escorrega, Vale do Alcantilado.' }
+        ]
+      },
+      adventure: {
+        title: 'Destinos para quem busca Aventura',
+        chartTitle: 'Índice de Popularidade: Aventura',
+        labels: ['Chapada Diamantina (BA)', 'P.N. Caparaó (MG)', 'P.N. Serra dos Órgãos (RJ)', 'Cânions Serra Geral (RS)', 'Chapada dos Veadeiros (GO)'],
+        popularity: [98, 93, 90, 86, 84],
+        backgroundColor: 'rgba(164, 144, 124, 0.7)',
+        borderColor: 'rgba(164, 144, 124, 1)',
+        destinations: [
+          { name: 'Chapada Diamantina, BA', description: 'Paraíso do trekking com cavernas, cachoeiras e o Morro do Pai Inácio.', attractions: 'Vale do Pati, Cachoeira da Fumaça.' },
+          { name: 'P.N. Caparaó, MG/ES', description: 'Abriga o Pico da Bandeira, um dos pontos mais altos do país.', attractions: 'Trekking ao Pico da Bandeira, Cachoeira Bonita.' },
+          { name: 'P.N. Serra dos Órgãos, RJ', description: 'Referência mundial em montanhismo técnico e trilhas clássicas.', attractions: 'Dedo de Deus, Travessia Petrópolis-Teresópolis.' },
+          { name: 'Cânions Serra Geral, RS/SC', description: 'Gigantescas fendas geológicas com vistas vertiginosas.', attractions: 'Cânion Fortaleza, Trilha do Rio do Boi.' },
+          { name: 'Chapada dos Veadeiros, GO', description: 'Misticismo e natureza bruta sobre placas de cristal de quartzo.', attractions: 'Vale da Lua, Cachoeira de Santa Bárbara.' }
+        ]
+      }
+    };
+
+    // --- Elementos DOM ---
+    const comfortBtn = document.getElementById('comfort-btn');
+    const adventureBtn = document.getElementById('adventure-btn');
+    const chartTitleEl = document.getElementById('chart-title');
+    const destinationsTitleEl = document.getElementById('destinations-title');
+    const destinationsGridEl = document.getElementById('destinations-grid');
+    const chartCanvas = document.getElementById('destinations-chart');
+    const insightsModal = document.getElementById('insights-modal');
+    const modalTitleEl = document.getElementById('modal-title');
+    const modalContentEl = document.getElementById('modal-content');
+    const modalLoaderEl = document.getElementById('modal-loader');
+    const successBannerEl = document.getElementById('success-banner');
+    const scrollContainerEl = document.getElementById('scroll-container');
+    
+    // Botões de Ação
+    const btnDownload = document.getElementById('btn-download');
+    const btnOpen = document.getElementById('btn-open');
+    
+    let chartInstance = null;
+    let currentDestinationName = '';
+    let lastGeneratedContent = '';
+
+    // --- Funções ---
+
+    function createDestinationCard(dest) {
+      return `
+        <div class="bg-white rounded-2xl shadow-md overflow-hidden flex flex-col h-full border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <div class="p-8 flex flex-col flex-grow">
+            <h3 class="text-2xl font-bold text-[#8D7B68] mb-3">${dest.name}</h3>
+            <p class="text-gray-600 mb-6 text-base flex-grow leading-relaxed">${dest.description}</p>
+            <div class="mb-6 bg-[#FDFBF8] p-4 rounded-xl border border-[#EFEBE5]">
+              <span class="font-bold text-[#65584A] text-xs uppercase tracking-wider block mb-2">Principais Atrações:</span>
+              <p class="text-gray-700 text-sm">${dest.attractions}</p>
+            </div>
+            <button onclick="openModal('${dest.name}')" class="mt-auto w-full bg-[#65584A] hover:bg-[#4A4137] text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 group">
+               <span class="group-hover:rotate-12 transition-transform">✨</span> Ver Roteiro IA
+            </button>
+          </div>
+        </div>`;
+    }
+
+    function updateContent(cat) {
+      const catData = data[cat];
+      chartTitleEl.textContent = catData.chartTitle;
+      destinationsTitleEl.textContent = catData.title;
+      destinationsGridEl.innerHTML = catData.destinations.map(createDestinationCard).join('');
+      updateChart(catData);
+      
+      if (cat === 'comfort') {
+        comfortBtn.classList.replace('inactive-tab', 'active-tab');
+        adventureBtn.classList.replace('active-tab', 'inactive-tab');
+      } else {
+        adventureBtn.classList.replace('inactive-tab', 'active-tab');
+        comfortBtn.classList.replace('active-tab', 'inactive-tab');
+      }
+    }
+
+    function updateChart(catData) {
+      if (chartInstance) {
+        chartInstance.data.labels = catData.labels;
+        chartInstance.data.datasets[0].data = catData.popularity;
+        chartInstance.data.datasets[0].backgroundColor = catData.backgroundColor;
+        chartInstance.data.datasets[0].borderColor = catData.borderColor;
+        chartInstance.update();
+      }
+    }
+
+    function initChart() {
+      const ctx = chartCanvas.getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: 'Popularidade', data: [], backgroundColor: [], borderColor: [], borderWidth: 1 }] },
+        options: { 
+          indexAxis: 'y', 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true, max: 100 } }
+        }
+      });
+    }
+
+    function openModal(name) {
+      currentDestinationName = name;
+      modalTitleEl.textContent = `Insights: ${name}`;
+      insightsModal.classList.remove('hidden');
+      insightsModal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      
+      // Reseta estado do modal
+      modalContentEl.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-40 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
+            <p class="text-lg text-center">👆 Escolha um tema e clique em <span class="font-bold text-[#8D7B68]">Gerar Roteiro</span></p>
+        </div>`;
+      successBannerEl.classList.add('hidden');
+      
+      // Esconde botões extras ao abrir novo modal
+      btnDownload.classList.add('hidden');
+      btnDownload.classList.remove('flex');
+      btnOpen.classList.add('hidden');
+      btnOpen.classList.remove('flex');
+      
+      lastGeneratedContent = '';
+    }
+
+    function closeModal() {
+      insightsModal.classList.add('hidden');
+      insightsModal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    async function activateApiAndGenerateInsight(name, theme) {
+      successBannerEl.classList.add('hidden');
+      modalLoaderEl.classList.remove('hidden');
+      // Esconde botões durante geração
+      btnDownload.classList.add('hidden');
+      btnOpen.classList.add('hidden');
+      
+      const themeMap = {
+          'geral': 'um roteiro de viagem de 3 dias completo',
+          'gastronomia': 'um guia focado exclusivamente na gastronomia local, pratos típicos e melhores restaurantes',
+          'historia': 'um guia focado em história, museus e curiosidades culturais',
+          'natureza': 'um guia focado em ecoturismo, melhores trilhas e vistas naturais',
+          'familia': 'um roteiro tranquilo adaptado para famílias com crianças'
+      };
+
+      // Prompt para HTML limpo
+      let promptText = `Atue como um guia turístico brasileiro especialista. Crie ${themeMap[theme] || 'um roteiro'} para ${name}. 
+      Use APENAS tags HTML para formatar (sem Markdown).
+      - Use <h3> para títulos das seções.
+      - Use <ul> e <li> para listas de atividades.
+      - Use <p> para parágrafos curtos.
+      - Use <strong> para destaque.
+      Não use \`\`\`html no inicio. Retorne apenas o HTML puro.`;
+
+      // DEIXAMOS APENAS O PAYLOAD SIMPLIFICADO AQUI:
+      const payload = { 
+          prompt: promptText 
+      };
+
+      try {
+        // Lembre-se: se for usar no Elementor, coloque aqui o link completo do seu Vercel
+        const resp = await fetch('/api/gerar-roteiro', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(payload) 
+        });
+
+        if (!resp.ok) {
+            const errorObj = await resp.json();
+            throw new Error(errorObj.error || "Erro desconhecido do servidor");
+        }
+
+        const result = await resp.json();
+        const text = result.texto_gerado; 
+        
+        let formattedText = text.replace(/```html/g, '').replace(/```/g, '');
+
+        lastGeneratedContent = formattedText.replace(/<[^>]*>?/gm, ''); 
+        
+        modalContentEl.innerHTML = formattedText;
+        scrollContainerEl.scrollTop = 0;
+        
+        modalLoaderEl.classList.add('hidden');
+        successBannerEl.classList.remove('hidden');
+
+        btnDownload.classList.remove('hidden');
+        btnDownload.classList.add('flex');
+        btnOpen.classList.remove('hidden');
+        btnOpen.classList.add('flex');
+
+      } catch (e) {
+        console.error("Erro capturado no catch:", e.message); 
+        modalLoaderEl.classList.add('hidden');
+        modalContentEl.innerHTML = `<div class="text-red-500 text-center p-4">
+          Erro ao conectar com a IA: <br><strong>${e.message}</strong><br>Verifique o console (F12) para mais detalhes.
+        </div>`;
+      }
+    } // <-- ESTA É A CHAVE QUE ESTAVA FALTANDO!
+
+    function openInNewTab() {
+      if (!lastGeneratedContent) return;
+      
+      const newWindow = window.open();
+      newWindow.document.write(`
+        <html><head><title>Roteiro - ${currentDestinationName}</title>
+        <style>
+          body{font-family:sans-serif; max-width:800px; margin:3rem auto; padding:0 1rem; line-height:1.6; color:#333; background-color: #f9f9f9;} 
+          h1{color:#8D7B68; border-bottom: 2px solid #8D7B68; padding-bottom: 10px;} 
+          h3{color:#65584A; margin-top: 25px; font-size: 1.2em;} 
+          li{margin-bottom: 5px;}
+          strong{color:#8D7B68;}
+        </style>
+        </head><body><h1>Roteiro para ${currentDestinationName}</h1>${modalContentEl.innerHTML}</body></html>
+      `);
+      newWindow.document.close();
+    }
+
+    function downloadInsight() {
+        if (!lastGeneratedContent) return;
+        
+        const blob = new Blob([lastGeneratedContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Roteiro_${currentDestinationName}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    // Inicialização
+    comfortBtn.addEventListener('click', () => updateContent('comfort'));
+    adventureBtn.addEventListener('click', () => updateContent('adventure'));
+    
+    initChart();
+    updateContent('comfort');
+
+  </script>
+</body>
+</html>
