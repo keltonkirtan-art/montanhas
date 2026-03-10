@@ -1,14 +1,14 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import google.generativeai as genai
-import os
+from flask import Flask, request, jsonify # Framework web leve para criar a API
+from flask_cors import CORS # Permite que o frontend (que roda em outro domínio/porta) acesse a API sem problemas de CORS
+import google.generativeai as genai # Biblioteca oficial do Google para acessar os modelos de IA generativa (como o Gemini) de forma fácil e segura
+import os # Biblioteca padrão do Python para interagir com o sistema operacional, usada aqui para acessar variáveis de ambiente (como a chave da API)
 from dotenv import load_dotenv
 
 # Carrega a chave do arquivo .env
-load_dotenv()
+load_dotenv() # Carrega as variáveis de ambiente do arquivo .env para que possamos acessar a chave da API de forma segura
 
-app = Flask(__name__)
-CORS(app)
+app = Flask(__name__) # Cria uma instância do Flask, que é o nosso servidor web
+CORS(app) # Habilita CORS para permitir que o frontend (que roda em outro domínio/porta) acesse a API sem problemas de CORS
 
 # 1. Configura a biblioteca oficial do Google com a sua chave secreta
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -36,6 +36,6 @@ def gerar_roteiro():
         print("Erro na IA:", e)
         return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
+if __name__ == '__main__': # Inicia o servidor Flask quando este arquivo for executado diretamente
     print("Servidor Python com SDK do Gemini rodando em http://localhost:5000")
     app.run(port=5000, debug=True)
