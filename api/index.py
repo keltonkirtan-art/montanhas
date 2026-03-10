@@ -14,7 +14,7 @@ CORS(app)
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # 2. Escolhe o modelo que vamos usar
-model = genai.GenerativeModel('gemini-2.0-flash')
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 @app.route('/api/gerar-roteiro', methods=['POST'])
 def gerar_roteiro():
