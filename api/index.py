@@ -16,7 +16,7 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 # 2. Escolhe o modelo que vamos usar
 model = genai.GenerativeModel('gemini-3.1-flash-lite-preview')
 
-@app.route('/api/gerar-roteiro', methods=['POST'])
+@app.route('/api/gerar-roteiro', methods=['POST']) # o usuário clica em "Gerar Roteiro", o Front-end envia um pedido (request) para essa função
 def gerar_roteiro():
     try:
         # Recebe os dados do frontend (agora enviaremos apenas o texto puro)
@@ -27,7 +27,7 @@ def gerar_roteiro():
             return jsonify({"error": "Nenhum prompt foi enviado."}), 400
 
         # 3. Manda a biblioteca gerar o conteúdo (ela faz a requisição por baixo dos panos)
-        resposta_ia = model.generate_content(prompt_do_usuario)
+        resposta_ia = model.generate_content(prompt_do_usuario) # A biblioteca oficial do Google cuida de toda a comunicação com a API do Gemini, incluindo autenticação, formatação da requisição e tratamento da resposta. Você só precisa chamar generate_content() com o texto do prompt, e ela retorna um objeto com o texto gerado pela IA. Isso torna o código muito mais limpo e fácil de entender, sem precisar lidar com detalhes técnicos como headers, tokens ou parsing manual da resposta JSON.
 
         # 4. Devolve o texto gerado de forma limpa e direta para o seu site
         return jsonify({"texto_gerado": resposta_ia.text})
