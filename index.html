@@ -131,6 +131,9 @@
            <button id="btn-open" onclick="openInNewTab()" class="hidden w-full bg-[#1c4c96] hover:bg-[#163a75] text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
                 🗺️ Abrir Janela     
             </button>
+            <button id="whatsapp-btn" onclick="openInNewTab()" class="hidden w-full bg-[#25D366] hover:bg-[#1ebe5b] text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
+                📱 Compartilhar no WhatsApp
+            </button>
           </div>
 
       <div id="scroll-container" class="flex-1 w-full overflow-y-auto bg-white p-6 md:p-8 relative">
@@ -208,10 +211,13 @@ adventure: {
     // Botões de Ação
     const btnDownload = document.getElementById('btn-download');
     const btnOpen = document.getElementById('btn-open');
+    const whatsappBtn = document.getElementById('whatsapp-btn');
+
     
     let chartInstance = null;
     let currentDestinationName = '';
     let lastGeneratedContent = '';
+    
 
     // --- Funções ---
 
@@ -427,6 +433,15 @@ adventure: {
 
         html2pdf().set(opt).from(element).save();
     }
+    // Ação: Compartilhar no WhatsApp
+whatsappBtn.addEventListener('click', () => {
+    // Substitua o link abaixo pelo link real do seu projeto no Vercel
+    const linkDoApp = "https://montanhas-omega.vercel.app/";
+    const mensagem = `🌄 Olha que sensacional o roteiro de montanha que eu gerei! Venha gerar o seu roteiro de viagem também: ${linkDoApp}`;
+    
+    const urlWhatsApp = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+    window.open(urlWhatsApp, '_blank');
+});
 
     // Inicialização (Mantenha estas linhas no final)
     comfortBtn.addEventListener('click', () => updateContent('comfort'));
