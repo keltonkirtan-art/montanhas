@@ -131,7 +131,7 @@
            <button id="btn-open" onclick="openInNewTab()" class="hidden w-full bg-[#1c4c96] hover:bg-[#163a75] text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
                 🗺️ Abrir Janela     
             </button>
-            <button id="btn-whatsapp" onclick="openInNewTab()" class="hidden w-full bg-[#25D366] hover:bg-[#1ebe5b] text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
+            <button id="btn-whatsapp" class="hidden w-full bg-[#25D366] hover:bg-[#1ebe5b] text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
                 📱 Compartilhar no WhatsApp
             </button>
           </div>
@@ -298,6 +298,9 @@ adventure: {
       btnDownload.classList.remove('flex');
       btnOpen.classList.add('hidden');
       btnOpen.classList.remove('flex');
+      // Adicione estas duas linhas:
+      btnWhatsapp.classList.add('hidden');
+      btnWhatsapp.classList.remove('flex');
       
       lastGeneratedContent = '';
     }
@@ -367,6 +370,9 @@ adventure: {
         btnDownload.classList.add('flex');
         btnOpen.classList.remove('hidden');
         btnOpen.classList.add('flex');
+        // Adicione estas duas linhas:
+        btnWhatsapp.classList.remove('hidden');
+        btnWhatsapp.classList.add('flex');
 
       } catch (e) {
         console.error("Erro capturado no catch:", e.message); 
@@ -433,15 +439,14 @@ adventure: {
 
         html2pdf().set(opt).from(element).save();
     }
-    // Ação: Compartilhar no WhatsApp
-whatsappBtn.addEventListener('click', () => {
-    // Substitua o link abaixo pelo link real do seu projeto no Vercel
+   // Ação: Compartilhar no WhatsApp (Corrigido)
+    btnWhatsapp.addEventListener('click', () => {
     const linkDoApp = "https://montanhas-omega.vercel.app/";
-    const mensagem = `🌄 Olha que sensacional o roteiro de montanha que eu gerei! Venha gerar o seu roteiro de viagem também: ${linkDoApp}`;
+    const mensagem = `⛰️ Olha que sensacional o roteiro que eu gerei para ${currentDestinationName}! Venha gerar o seu roteiro de viagem também: ${linkDoApp}`;
     
     const urlWhatsApp = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
     window.open(urlWhatsApp, '_blank');
-});
+  });
 
     // Inicialização (Mantenha estas linhas no final)
     comfortBtn.addEventListener('click', () => updateContent('comfort'));
